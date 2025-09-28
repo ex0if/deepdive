@@ -1,0 +1,42 @@
+name: Run Daily Script
+
+on:
+  schedule:
+    - cron: "0 22 * * *"   # 0 Uhr deutscher Zeit (UTC+2)
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run script
+        env:
+          FIRESTORE_KEY: ${{ secrets.FIRESTORE_KEY }}
+        run: python deepfireXspot.py
+
+      - name: Upload scraping report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraping-report
+          path: report.csv     # Pfad zur Datei, die dein Skript erstellt
+
+      - name: Upload backup CSV
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-csv
+          path: backup.csv     # Pfad zur Datei, die dein Skript erstellt
